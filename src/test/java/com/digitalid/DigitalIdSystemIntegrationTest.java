@@ -16,6 +16,7 @@ import com.digitalid.management.InMemoryDigitalIdRepository;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.DigitalIdStatus;
 import com.digitalid.model.OrganisationType;
+import com.digitalid.model.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,9 +64,10 @@ class DigitalIdSystemIntegrationTest {
     void should_suspendIdentityAndLogSuccess_when_centralAuthoritySuspendsIdentity() {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
 
-        identityManager.suspend(id.getId(), "under investigation");
+        Result<DigitalId> result = identityManager.suspend(id.getId(), "under investigation");
 
-        assertEquals(DigitalIdStatus.SUSPENDED, identityManager.findById(id.getId()).getStatus());
+        assertTrue(result.isSuccess());
+        assertEquals(DigitalIdStatus.SUSPENDED, result.getValue().getStatus());
 
         List<AuditEvent> log = auditLogger.getLog();
         assertEquals(2, log.size());
@@ -78,9 +80,10 @@ class DigitalIdSystemIntegrationTest {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
         identityManager.suspend(id.getId(), "temp suspension");
 
-        identityManager.reactivate(id.getId(), "cleared");
+        Result<DigitalId> result = identityManager.reactivate(id.getId(), "cleared");
 
-        assertEquals(DigitalIdStatus.ACTIVE, identityManager.findById(id.getId()).getStatus());
+        assertTrue(result.isSuccess());
+        assertEquals(DigitalIdStatus.ACTIVE, result.getValue().getStatus());
 
         List<AuditEvent> log = auditLogger.getLog();
         assertEquals(3, log.size());
@@ -92,9 +95,10 @@ class DigitalIdSystemIntegrationTest {
     void should_revokeIdentityAndLogSuccess_when_centralAuthorityRevokesIdentity() {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
 
-        identityManager.revoke(id.getId(), "fraud detected");
+        Result<DigitalId> result = identityManager.revoke(id.getId(), "fraud detected");
 
-        assertEquals(DigitalIdStatus.REVOKED, identityManager.findById(id.getId()).getStatus());
+        assertTrue(result.isSuccess());
+        assertEquals(DigitalIdStatus.REVOKED, result.getValue().getStatus());
 
         List<AuditEvent> log = auditLogger.getLog();
         assertEquals(2, log.size());
@@ -106,9 +110,10 @@ class DigitalIdSystemIntegrationTest {
     void should_updateAddressAndLogSuccess_when_centralAuthorityUpdatesAddress() {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
 
-        identityManager.updateAddress(id.getId(), "123 Main St");
+        Result<DigitalId> result = identityManager.updateAddress(id.getId(), "123 Main St");
 
-        assertEquals("123 Main St", identityManager.findById(id.getId()).getAddress());
+        assertTrue(result.isSuccess());
+        assertEquals("123 Main St", result.getValue().getAddress());
 
         List<AuditEvent> log = auditLogger.getLog();
         assertEquals(2, log.size());
@@ -150,12 +155,14 @@ class DigitalIdSystemIntegrationTest {
     // MANAGEMENT — business rule violations
 
     @Test
-    void should_throwAndLogFailure_when_updatingRevokedIdentity() {
+    void should_returnFailureResultAndLogFailure_when_updatingRevokedIdentity() {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
         identityManager.revoke(id.getId(), "fraud");
 
-        assertThrows(IllegalStateException.class, () ->
-                identityManager.updateAddress(id.getId(), "123 Main St"));
+        Result<DigitalId> result = identityManager.updateAddress(id.getId(), "123 Main St");
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
 
         List<AuditEvent> log = auditLogger.getLog();
         assertEquals(3, log.size());
@@ -164,12 +171,14 @@ class DigitalIdSystemIntegrationTest {
     }
 
     @Test
-    void should_throwAndLogFailure_when_suspendingAlreadySuspendedIdentity() {
+    void should_returnFailureResultAndLogFailure_when_suspendingAlreadySuspendedIdentity() {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
         identityManager.suspend(id.getId(), "first suspension");
 
-        assertThrows(IllegalStateException.class, () ->
-                identityManager.suspend(id.getId(), "second suspension"));
+        Result<DigitalId> result = identityManager.suspend(id.getId(), "second suspension");
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("SUSPENDED"));
 
         List<AuditEvent> log = auditLogger.getLog();
         assertEquals(3, log.size());

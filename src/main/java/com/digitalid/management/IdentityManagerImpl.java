@@ -8,6 +8,7 @@ import com.digitalid.model.DigitalId;
 import com.digitalid.model.DigitalIdMutator;
 import com.digitalid.model.DigitalIdStatus;
 import com.digitalid.model.OrganisationType;
+import com.digitalid.model.Result;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -58,14 +59,18 @@ public class IdentityManagerImpl implements IdentityManager {
     }
 
     @Override
-    public DigitalId updateAddress(UUID id, String newAddress) {
+    public Result<DigitalId> updateAddress(UUID id, String newAddress) {
         try {
             authorisationManager.authorise(new OrganisationRequest(organisationType, Operations.UPDATE_ADDRESS));
             DigitalIdMutator mutator = requireExisting(id);
-            requireNotRevoked(mutator.getDigitalId());
+            DigitalId digitalId = mutator.getDigitalId();
+            if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
+                auditLogger.log(organisationType, Operations.UPDATE_ADDRESS, id, false, "Cannot modify a REVOKED Digital ID");
+                return Result.failure("Cannot modify a REVOKED Digital ID");
+            }
             mutator.updateAddress(newAddress);
             auditLogger.log(organisationType, Operations.UPDATE_ADDRESS, id, true, "Address updated");
-            return mutator.getDigitalId();
+            return Result.success(digitalId);
         } catch (RuntimeException e) {
             auditLogger.log(organisationType, Operations.UPDATE_ADDRESS, id, false, e.getMessage());
             throw e;
@@ -73,14 +78,18 @@ public class IdentityManagerImpl implements IdentityManager {
     }
 
     @Override
-    public DigitalId updateEmail(UUID id, String newEmail) {
+    public Result<DigitalId> updateEmail(UUID id, String newEmail) {
         try {
             authorisationManager.authorise(new OrganisationRequest(organisationType, Operations.UPDATE_EMAIL));
             DigitalIdMutator mutator = requireExisting(id);
-            requireNotRevoked(mutator.getDigitalId());
+            DigitalId digitalId = mutator.getDigitalId();
+            if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
+                auditLogger.log(organisationType, Operations.UPDATE_EMAIL, id, false, "Cannot modify a REVOKED Digital ID");
+                return Result.failure("Cannot modify a REVOKED Digital ID");
+            }
             mutator.updateEmail(newEmail);
             auditLogger.log(organisationType, Operations.UPDATE_EMAIL, id, true, "Email updated");
-            return mutator.getDigitalId();
+            return Result.success(digitalId);
         } catch (RuntimeException e) {
             auditLogger.log(organisationType, Operations.UPDATE_EMAIL, id, false, e.getMessage());
             throw e;
@@ -88,14 +97,18 @@ public class IdentityManagerImpl implements IdentityManager {
     }
 
     @Override
-    public DigitalId updateTemporaryRestriction(UUID id, boolean restriction) {
+    public Result<DigitalId> updateTemporaryRestriction(UUID id, boolean restriction) {
         try {
             authorisationManager.authorise(new OrganisationRequest(organisationType, Operations.UPDATE_TEMPORARY_RESTRICTION));
             DigitalIdMutator mutator = requireExisting(id);
-            requireNotRevoked(mutator.getDigitalId());
+            DigitalId digitalId = mutator.getDigitalId();
+            if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
+                auditLogger.log(organisationType, Operations.UPDATE_TEMPORARY_RESTRICTION, id, false, "Cannot modify a REVOKED Digital ID");
+                return Result.failure("Cannot modify a REVOKED Digital ID");
+            }
             mutator.updateTemporaryRestriction(restriction);
             auditLogger.log(organisationType, Operations.UPDATE_TEMPORARY_RESTRICTION, id, true, "Temporary restriction updated to " + restriction);
-            return mutator.getDigitalId();
+            return Result.success(digitalId);
         } catch (RuntimeException e) {
             auditLogger.log(organisationType, Operations.UPDATE_TEMPORARY_RESTRICTION, id, false, e.getMessage());
             throw e;
@@ -103,20 +116,22 @@ public class IdentityManagerImpl implements IdentityManager {
     }
 
     @Override
-    public DigitalId suspend(UUID id, String reason) {
+    public Result<DigitalId> suspend(UUID id, String reason) {
         try {
             authorisationManager.authorise(new OrganisationRequest(organisationType, Operations.SUSPEND));
             DigitalIdMutator mutator = requireExisting(id);
             DigitalId digitalId = mutator.getDigitalId();
             if (digitalId.getStatus() == DigitalIdStatus.SUSPENDED) {
-                throw new IllegalStateException("Digital ID is already SUSPENDED");
+                auditLogger.log(organisationType, Operations.SUSPEND, id, false, "Digital ID is already SUSPENDED");
+                return Result.failure("Digital ID is already SUSPENDED");
             }
             if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
-                throw new IllegalStateException("Cannot suspend a REVOKED Digital ID");
+                auditLogger.log(organisationType, Operations.SUSPEND, id, false, "Cannot suspend a REVOKED Digital ID");
+                return Result.failure("Cannot suspend a REVOKED Digital ID");
             }
             mutator.updateStatus(DigitalIdStatus.SUSPENDED, reason);
             auditLogger.log(organisationType, Operations.SUSPEND, id, true, reason);
-            return digitalId;
+            return Result.success(digitalId);
         } catch (RuntimeException e) {
             auditLogger.log(organisationType, Operations.SUSPEND, id, false, e.getMessage());
             throw e;
@@ -124,20 +139,22 @@ public class IdentityManagerImpl implements IdentityManager {
     }
 
     @Override
-    public DigitalId reactivate(UUID id, String reason) {
+    public Result<DigitalId> reactivate(UUID id, String reason) {
         try {
             authorisationManager.authorise(new OrganisationRequest(organisationType, Operations.REACTIVATE));
             DigitalIdMutator mutator = requireExisting(id);
             DigitalId digitalId = mutator.getDigitalId();
             if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
-                throw new IllegalStateException("Cannot reactivate a REVOKED Digital ID");
+                auditLogger.log(organisationType, Operations.REACTIVATE, id, false, "Cannot reactivate a REVOKED Digital ID");
+                return Result.failure("Cannot reactivate a REVOKED Digital ID");
             }
             if (digitalId.getStatus() == DigitalIdStatus.ACTIVE) {
-                throw new IllegalStateException("Digital ID is already ACTIVE");
+                auditLogger.log(organisationType, Operations.REACTIVATE, id, false, "Digital ID is already ACTIVE");
+                return Result.failure("Digital ID is already ACTIVE");
             }
             mutator.updateStatus(DigitalIdStatus.ACTIVE, reason);
             auditLogger.log(organisationType, Operations.REACTIVATE, id, true, reason);
-            return digitalId;
+            return Result.success(digitalId);
         } catch (RuntimeException e) {
             auditLogger.log(organisationType, Operations.REACTIVATE, id, false, e.getMessage());
             throw e;
@@ -145,17 +162,18 @@ public class IdentityManagerImpl implements IdentityManager {
     }
 
     @Override
-    public DigitalId revoke(UUID id, String reason) {
+    public Result<DigitalId> revoke(UUID id, String reason) {
         try {
             authorisationManager.authorise(new OrganisationRequest(organisationType, Operations.REVOKE));
             DigitalIdMutator mutator = requireExisting(id);
             DigitalId digitalId = mutator.getDigitalId();
             if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
-                throw new IllegalStateException("Digital ID is already REVOKED");
+                auditLogger.log(organisationType, Operations.REVOKE, id, false, "Digital ID is already REVOKED");
+                return Result.failure("Digital ID is already REVOKED");
             }
             mutator.updateStatus(DigitalIdStatus.REVOKED, reason);
             auditLogger.log(organisationType, Operations.REVOKE, id, true, reason);
-            return digitalId;
+            return Result.success(digitalId);
         } catch (RuntimeException e) {
             auditLogger.log(organisationType, Operations.REVOKE, id, false, e.getMessage());
             throw e;
@@ -173,11 +191,5 @@ public class IdentityManagerImpl implements IdentityManager {
         return repository.findById(id)
                 .map(DigitalId::getMutator)
                 .orElseThrow(() -> new IllegalArgumentException("No Digital ID found for id: " + id));
-    }
-
-    private void requireNotRevoked(DigitalId digitalId) {
-        if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
-            throw new IllegalStateException("Cannot modify a REVOKED Digital ID");
-        }
     }
 }

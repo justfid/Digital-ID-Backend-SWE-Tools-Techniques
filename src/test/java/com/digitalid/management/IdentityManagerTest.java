@@ -7,6 +7,7 @@ import com.digitalid.auth.AuthorisationManagerImpl;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.DigitalIdStatus;
 import com.digitalid.model.OrganisationType;
+import com.digitalid.model.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -75,19 +76,20 @@ class IdentityManagerTest {
 
     @Test
     void should_updateAddress_when_idIsActive() {
-        DigitalId result = manager.updateAddress(activeId.getId(), "123 Main St");
+        Result<DigitalId> result = manager.updateAddress(activeId.getId(), "123 Main St");
 
-        assertEquals("123 Main St", result.getAddress());
+        assertTrue(result.isSuccess());
+        assertEquals("123 Main St", result.getValue().getAddress());
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_updatingAddressOnRevokedId() {
+    void should_returnFailureResult_when_updatingAddressOnRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.updateAddress(activeId.getId(), "123 Main St"));
+        Result<DigitalId> result = manager.updateAddress(activeId.getId(), "123 Main St");
 
-        assertTrue(ex.getMessage().contains("REVOKED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
     }
 
     @Test
@@ -100,106 +102,112 @@ class IdentityManagerTest {
 
     @Test
     void should_updateEmail_when_idIsActive() {
-        DigitalId result = manager.updateEmail(activeId.getId(), "jane@example.com");
+        Result<DigitalId> result = manager.updateEmail(activeId.getId(), "jane@example.com");
 
-        assertEquals("jane@example.com", result.getEmail());
+        assertTrue(result.isSuccess());
+        assertEquals("jane@example.com", result.getValue().getEmail());
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_updatingEmailOnRevokedId() {
+    void should_returnFailureResult_when_updatingEmailOnRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.updateEmail(activeId.getId(), "jane@example.com"));
+        Result<DigitalId> result = manager.updateEmail(activeId.getId(), "jane@example.com");
 
-        assertTrue(ex.getMessage().contains("REVOKED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
     }
 
     @Test
     void should_updateTemporaryRestriction_when_idIsActive() {
-        DigitalId result = manager.updateTemporaryRestriction(activeId.getId(), true);
+        Result<DigitalId> result = manager.updateTemporaryRestriction(activeId.getId(), true);
 
-        assertTrue(result.isTemporaryRestriction());
+        assertTrue(result.isSuccess());
+        assertTrue(result.getValue().isTemporaryRestriction());
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_updatingRestrictionOnRevokedId() {
+    void should_returnFailureResult_when_updatingRestrictionOnRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.updateTemporaryRestriction(activeId.getId(), true));
+        Result<DigitalId> result = manager.updateTemporaryRestriction(activeId.getId(), true);
 
-        assertTrue(ex.getMessage().contains("REVOKED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
     }
 
     @Test
     void should_changeStatusToSuspended_when_suspended() {
-        manager.suspend(activeId.getId(), "Under investigation");
+        Result<DigitalId> result = manager.suspend(activeId.getId(), "Under investigation");
 
-        assertEquals(DigitalIdStatus.SUSPENDED, manager.findById(activeId.getId()).getStatus());
+        assertTrue(result.isSuccess());
+        assertEquals(DigitalIdStatus.SUSPENDED, result.getValue().getStatus());
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_suspendingAlreadySuspendedId() {
+    void should_returnFailureResult_when_suspendingAlreadySuspendedId() {
         manager.suspend(activeId.getId(), "first suspension");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.suspend(activeId.getId(), "second suspension"));
+        Result<DigitalId> result = manager.suspend(activeId.getId(), "second suspension");
 
-        assertTrue(ex.getMessage().contains("SUSPENDED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("SUSPENDED"));
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_suspendingRevokedId() {
+    void should_returnFailureResult_when_suspendingRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.suspend(activeId.getId(), "attempt suspend"));
+        Result<DigitalId> result = manager.suspend(activeId.getId(), "attempt suspend");
 
-        assertTrue(ex.getMessage().contains("REVOKED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
     }
 
     @Test
     void should_changeStatusToActive_when_reactivatedFromSuspended() {
         manager.suspend(activeId.getId(), "temp suspension");
-        manager.reactivate(activeId.getId(), "cleared");
 
-        assertEquals(DigitalIdStatus.ACTIVE, manager.findById(activeId.getId()).getStatus());
+        Result<DigitalId> result = manager.reactivate(activeId.getId(), "cleared");
+
+        assertTrue(result.isSuccess());
+        assertEquals(DigitalIdStatus.ACTIVE, result.getValue().getStatus());
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_reactivatingActiveId() {
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.reactivate(activeId.getId(), "already active"));
+    void should_returnFailureResult_when_reactivatingActiveId() {
+        Result<DigitalId> result = manager.reactivate(activeId.getId(), "already active");
 
-        assertTrue(ex.getMessage().contains("ACTIVE"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("ACTIVE"));
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_reactivatingRevokedId() {
+    void should_returnFailureResult_when_reactivatingRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.reactivate(activeId.getId(), "attempt reactivate"));
+        Result<DigitalId> result = manager.reactivate(activeId.getId(), "attempt reactivate");
 
-        assertTrue(ex.getMessage().contains("REVOKED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
     }
 
     @Test
     void should_changeStatusToRevoked_when_revoked() {
-        manager.revoke(activeId.getId(), "fraud");
+        Result<DigitalId> result = manager.revoke(activeId.getId(), "fraud");
 
-        assertEquals(DigitalIdStatus.REVOKED, manager.findById(activeId.getId()).getStatus());
+        assertTrue(result.isSuccess());
+        assertEquals(DigitalIdStatus.REVOKED, result.getValue().getStatus());
     }
 
     @Test
-    void should_throwWithDescriptiveMessage_when_revokingAlreadyRevokedId() {
+    void should_returnFailureResult_when_revokingAlreadyRevokedId() {
         manager.revoke(activeId.getId(), "first revoke");
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-                manager.revoke(activeId.getId(), "second revoke"));
+        Result<DigitalId> result = manager.revoke(activeId.getId(), "second revoke");
 
-        assertTrue(ex.getMessage().contains("REVOKED"));
+        assertFalse(result.isSuccess());
+        assertTrue(result.getFailureReason().contains("REVOKED"));
     }
 
     @Test

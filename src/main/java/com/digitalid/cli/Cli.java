@@ -14,6 +14,7 @@ import com.digitalid.management.IdentityManagerImpl;
 import com.digitalid.management.InMemoryDigitalIdRepository;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.OrganisationType;
+import com.digitalid.model.Result;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -192,8 +193,12 @@ public class Cli {
         if (id == null) return;
         String address = readLine("New address: ");
         try {
-            identityManager.updateAddress(id, address);
-            System.out.println("Address updated.");
+            Result<DigitalId> result = identityManager.updateAddress(id, address);
+            if (result.isSuccess()) {
+                System.out.println("Address updated.");
+            } else {
+                System.out.println("Error: " + result.getFailureReason());
+            }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -204,8 +209,12 @@ public class Cli {
         if (id == null) return;
         String email = readLine("New email: ");
         try {
-            identityManager.updateEmail(id, email);
-            System.out.println("Email updated.");
+            Result<DigitalId> result = identityManager.updateEmail(id, email);
+            if (result.isSuccess()) {
+                System.out.println("Email updated.");
+            } else {
+                System.out.println("Error: " + result.getFailureReason());
+            }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -222,8 +231,12 @@ public class Cli {
         }
         boolean restriction = Boolean.parseBoolean(input);
         try {
-            identityManager.updateTemporaryRestriction(id, restriction);
-            System.out.println("Temporary restriction set to " + restriction + ".");
+            Result<DigitalId> result = identityManager.updateTemporaryRestriction(id, restriction);
+            if (result.isSuccess()) {
+                System.out.println("Temporary restriction set to " + restriction + ".");
+            } else {
+                System.out.println("Error: " + result.getFailureReason());
+            }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -234,8 +247,12 @@ public class Cli {
         if (id == null) return;
         String reason = readLine("Reason: ");
         try {
-            identityManager.suspend(id, reason);
-            System.out.println("Identity suspended.");
+            Result<DigitalId> result = identityManager.suspend(id, reason);
+            if (result.isSuccess()) {
+                System.out.println("Identity suspended.");
+            } else {
+                System.out.println("Error: " + result.getFailureReason());
+            }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -246,8 +263,12 @@ public class Cli {
         if (id == null) return;
         String reason = readLine("Reason: ");
         try {
-            identityManager.reactivate(id, reason);
-            System.out.println("Identity reactivated.");
+            Result<DigitalId> result = identityManager.reactivate(id, reason);
+            if (result.isSuccess()) {
+                System.out.println("Identity reactivated.");
+            } else {
+                System.out.println("Error: " + result.getFailureReason());
+            }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -258,8 +279,12 @@ public class Cli {
         if (id == null) return;
         String reason = readLine("Reason: ");
         try {
-            identityManager.revoke(id, reason);
-            System.out.println("Identity revoked.");
+            Result<DigitalId> result = identityManager.revoke(id, reason);
+            if (result.isSuccess()) {
+                System.out.println("Identity revoked.");
+            } else {
+                System.out.println("Error: " + result.getFailureReason());
+            }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
