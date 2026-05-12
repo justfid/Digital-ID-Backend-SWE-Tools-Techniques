@@ -16,34 +16,34 @@ public class IdentityConsumptionServiceImpl implements IdentityConsumptionServic
     }
 
     @Override
-    public ValidityResponse checkValidity(UUID id) {
+    public VerificationResponse checkValidity(UUID id) {
         DigitalId digitalId;
         try {
             digitalId = manager.findById(id);
         } catch (IllegalArgumentException e) {
-            return new ValidityResponse(false, "Identity not found");
+            return VerificationResponse.invalid("Identity not found");
         }
 
         if (digitalId.getStatus() == DigitalIdStatus.ACTIVE) {
-            return new ValidityResponse(true, "Identity is active");
+            return VerificationResponse.valid("Identity is active");
         }
         if (digitalId.getStatus() == DigitalIdStatus.SUSPENDED) {
-            return new ValidityResponse(false, "Identity is suspended");
+            return VerificationResponse.invalid("Identity is suspended");
         }
-        return new ValidityResponse(false, "Identity is revoked");
+        return VerificationResponse.invalid("Identity is revoked");
     }
 
     @Override
-    public TaxVerificationResponse checkTaxEligibility(UUID id, LocalDate periodStart, LocalDate periodEnd) {
+    public VerificationResponse checkTaxEligibility(UUID id, LocalDate periodStart, LocalDate periodEnd) {
         DigitalId digitalId;
         try {
             digitalId = manager.findById(id);
         } catch (IllegalArgumentException e) {
-            return new TaxVerificationResponse(false, "Identity not found");
+            return VerificationResponse.invalid("Identity not found");
         }
 
         if (digitalId.getStatus() != DigitalIdStatus.ACTIVE) {
-            return new TaxVerificationResponse(false, "Identity is not active");
+            return VerificationResponse.invalid("Identity is not active");
         }
 
         boolean wasSuspendedDuringPeriod = digitalId.getStatusHistory().stream()
@@ -52,29 +52,29 @@ public class IdentityConsumptionServiceImpl implements IdentityConsumptionServic
                         && !entry.getTimestamp().toLocalDate().isAfter(periodEnd));
 
         if (wasSuspendedDuringPeriod) {
-            return new TaxVerificationResponse(false, "Identity was suspended during the reporting period");
+            return VerificationResponse.invalid("Identity was suspended during the reporting period");
         }
 
-        return new TaxVerificationResponse(true, "Identity is eligible for tax reporting");
+        return VerificationResponse.valid("Identity is eligible for tax reporting");
     }
 
     @Override
-    public LicenceVerificationResponse checkLicenceEligibility(UUID id) {
+    public VerificationResponse checkLicenceEligibility(UUID id) {
         DigitalId digitalId;
         try {
             digitalId = manager.findById(id);
         } catch (IllegalArgumentException e) {
-            return new LicenceVerificationResponse(false, "Identity not found");
+            return VerificationResponse.invalid("Identity not found");
         }
 
         if (digitalId.getStatus() != DigitalIdStatus.ACTIVE) {
-            return new LicenceVerificationResponse(false, "Identity is not active");
+            return VerificationResponse.invalid("Identity is not active");
         }
 
         if (digitalId.isTemporaryRestriction()) {
-            return new LicenceVerificationResponse(false, "Identity has a temporary restriction");
+            return VerificationResponse.invalid("Identity has a temporary restriction");
         }
 
-        return new LicenceVerificationResponse(true, "Identity is eligible for a driving licence");
+        return VerificationResponse.valid("Identity is eligible for a driving licence");
     }
 }

@@ -70,19 +70,23 @@ public class DigitalId {
         return Collections.unmodifiableList(statusHistory);
     }
 
-    public void updateAddress(String address) {
+    public DigitalIdMutator getMutator() {
+        return new DigitalIdMutator(this);
+    }
+
+    void updateAddress(String address) {
         this.address = address;
     }
 
-    public void updateEmail(String email) {
+    void updateEmail(String email) {
         this.email = email;
     }
 
-    public void updateTemporaryRestriction(boolean temporaryRestriction) {
+    void updateTemporaryRestriction(boolean temporaryRestriction) {
         this.temporaryRestriction = temporaryRestriction;
     }
 
-    public void updateStatus(DigitalIdStatus newStatus, String reason) {
+    void updateStatus(DigitalIdStatus newStatus, String reason) {
         this.status = newStatus;
         this.statusHistory.add(new StatusEntry(newStatus, LocalDateTime.now(), reason));
     }

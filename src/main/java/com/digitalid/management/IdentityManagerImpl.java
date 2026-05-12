@@ -1,6 +1,7 @@
 package com.digitalid.management;
 
 import com.digitalid.model.DigitalId;
+import com.digitalid.model.DigitalIdMutator;
 import com.digitalid.model.DigitalIdStatus;
 
 import java.time.LocalDate;
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 public class IdentityManagerImpl implements IdentityManager {
 
-    private final Map<UUID, DigitalId> store = new HashMap<>();
+    private final Map<UUID, DigitalIdMutator> store = new HashMap<>();
 
     @Override
     public DigitalId createIdentity(String nationalIdNumber, LocalDate dateOfBirth, String fullName,
@@ -28,81 +29,84 @@ public class IdentityManagerImpl implements IdentityManager {
                 .address(address)
                 .email(email)
                 .build();
-        store.put(digitalId.getId(), digitalId);
+        store.put(digitalId.getId(), digitalId.getMutator());
         return digitalId;
     }
 
     @Override
     public DigitalId updateAddress(UUID id, String newAddress) {
-        DigitalId digitalId = requireExisting(id);
-        requireNotRevoked(digitalId);
-        digitalId.updateAddress(newAddress);
-        return digitalId;
+        DigitalIdMutator mutator = requireExisting(id);
+        requireNotRevoked(mutator.getDigitalId());
+        mutator.updateAddress(newAddress);
+        return mutator.getDigitalId();
     }
 
     @Override
     public DigitalId updateEmail(UUID id, String newEmail) {
-        DigitalId digitalId = requireExisting(id);
-        requireNotRevoked(digitalId);
-        digitalId.updateEmail(newEmail);
-        return digitalId;
+        DigitalIdMutator mutator = requireExisting(id);
+        requireNotRevoked(mutator.getDigitalId());
+        mutator.updateEmail(newEmail);
+        return mutator.getDigitalId();
     }
 
     @Override
     public DigitalId updateTemporaryRestriction(UUID id, boolean restriction) {
-        DigitalId digitalId = requireExisting(id);
-        requireNotRevoked(digitalId);
-        digitalId.updateTemporaryRestriction(restriction);
-        return digitalId;
+        DigitalIdMutator mutator = requireExisting(id);
+        requireNotRevoked(mutator.getDigitalId());
+        mutator.updateTemporaryRestriction(restriction);
+        return mutator.getDigitalId();
     }
 
     @Override
     public DigitalId suspend(UUID id, String reason) {
-        DigitalId digitalId = requireExisting(id);
+        DigitalIdMutator mutator = requireExisting(id);
+        DigitalId digitalId = mutator.getDigitalId();
         if (digitalId.getStatus() == DigitalIdStatus.SUSPENDED) {
             throw new IllegalStateException("Digital ID is already SUSPENDED");
         }
         if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
             throw new IllegalStateException("Cannot suspend a REVOKED Digital ID");
         }
-        digitalId.updateStatus(DigitalIdStatus.SUSPENDED, reason);
+        mutator.updateStatus(DigitalIdStatus.SUSPENDED, reason);
         return digitalId;
     }
 
     @Override
     public DigitalId reactivate(UUID id, String reason) {
-        DigitalId digitalId = requireExisting(id);
+        DigitalIdMutator mutator = requireExisting(id);
+        DigitalId digitalId = mutator.getDigitalId();
         if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
             throw new IllegalStateException("Cannot reactivate a REVOKED Digital ID");
         }
         if (digitalId.getStatus() == DigitalIdStatus.ACTIVE) {
             throw new IllegalStateException("Digital ID is already ACTIVE");
         }
-        digitalId.updateStatus(DigitalIdStatus.ACTIVE, reason);
+        mutator.updateStatus(DigitalIdStatus.ACTIVE, reason);
         return digitalId;
     }
 
     @Override
     public DigitalId revoke(UUID id, String reason) {
-        DigitalId digitalId = requireExisting(id);
+        DigitalIdMutator mutator = requireExisting(id);
+        DigitalId digitalId = mutator.getDigitalId();
         if (digitalId.getStatus() == DigitalIdStatus.REVOKED) {
             throw new IllegalStateException("Digital ID is already REVOKED");
         }
-        digitalId.updateStatus(DigitalIdStatus.REVOKED, reason);
+        mutator.updateStatus(DigitalIdStatus.REVOKED, reason);
         return digitalId;
     }
 
     @Override
     public DigitalId findById(UUID id) {
-        return requireExisting(id);
+        return requireExisting(id).getDigitalId();
     }
 
-    private DigitalId requireExisting(UUID id) {
-        DigitalId digitalId = store.get(id);
-        if (digitalId == null) {
+    private DigitalIdMutator requireExisting(UUID id) {
+        DigitalIdMutator mutator = store.get(id);
+        if (mutator == null) {
             throw new IllegalArgumentException("No Digital ID found for id: " + id);
         }
-        return digitalId;
+        return mutator;
     }
 
     private void requireNotRevoked(DigitalId digitalId) {

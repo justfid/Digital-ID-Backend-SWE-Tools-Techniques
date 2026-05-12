@@ -1,6 +1,6 @@
 package com.digitalid.auth;
 
-public interface AuthorisationService {
+public interface AuthorisationManager {
 
     /**
      * Throws UnauthorisedOperationException if the organisation in the request is not

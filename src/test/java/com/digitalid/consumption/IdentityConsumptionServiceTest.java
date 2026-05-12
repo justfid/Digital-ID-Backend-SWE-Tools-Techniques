@@ -26,27 +26,27 @@ class IdentityConsumptionServiceTest {
 
     @Test
     void checkValidityReturnsTrueForActiveId() {
-        ValidityResponse response = service.checkValidity(activeId.getId());
+        VerificationResponse response = service.checkValidity(activeId.getId());
         assertTrue(response.isValid());
     }
 
     @Test
     void checkValidityReturnsFalseForSuspendedId() {
         manager.suspend(activeId.getId(), "investigation");
-        ValidityResponse response = service.checkValidity(activeId.getId());
+        VerificationResponse response = service.checkValidity(activeId.getId());
         assertFalse(response.isValid());
     }
 
     @Test
     void checkValidityReturnsFalseForRevokedId() {
         manager.revoke(activeId.getId(), "fraud");
-        ValidityResponse response = service.checkValidity(activeId.getId());
+        VerificationResponse response = service.checkValidity(activeId.getId());
         assertFalse(response.isValid());
     }
 
     @Test
     void checkValidityReturnsFalseForNonExistentId() {
-        ValidityResponse response = service.checkValidity(UUID.randomUUID());
+        VerificationResponse response = service.checkValidity(UUID.randomUUID());
         assertFalse(response.isValid());
     }
 
@@ -54,7 +54,7 @@ class IdentityConsumptionServiceTest {
     void checkTaxEligibilityReturnsTrueForActiveIdWithNoSuspensionsInPeriod() {
         LocalDate periodStart = LocalDate.now().minusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
-        TaxVerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+        VerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
         assertTrue(response.isValid());
     }
 
@@ -62,7 +62,7 @@ class IdentityConsumptionServiceTest {
     void checkTaxEligibilityReturnsFalseForNonExistentId() {
         LocalDate periodStart = LocalDate.now().minusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
-        TaxVerificationResponse response = service.checkTaxEligibility(UUID.randomUUID(), periodStart, periodEnd);
+        VerificationResponse response = service.checkTaxEligibility(UUID.randomUUID(), periodStart, periodEnd);
         assertFalse(response.isValid());
     }
 
@@ -71,7 +71,7 @@ class IdentityConsumptionServiceTest {
         manager.suspend(activeId.getId(), "investigation");
         LocalDate periodStart = LocalDate.now().minusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
-        TaxVerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+        VerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
         assertFalse(response.isValid());
     }
 
@@ -83,7 +83,7 @@ class IdentityConsumptionServiceTest {
         // Period straddles today so the suspension timestamp falls within it
         LocalDate periodStart = LocalDate.now().minusDays(1);
         LocalDate periodEnd = LocalDate.now().plusDays(1);
-        TaxVerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+        VerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
         assertFalse(response.isValid());
     }
 
@@ -95,33 +95,33 @@ class IdentityConsumptionServiceTest {
         // Period is entirely in the future so the suspension (which happened now) falls outside it
         LocalDate periodStart = LocalDate.now().plusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(60);
-        TaxVerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+        VerificationResponse response = service.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
         assertTrue(response.isValid());
     }
 
     @Test
     void checkLicenceEligibilityReturnsTrueForActiveIdWithNoRestriction() {
-        LicenceVerificationResponse response = service.checkLicenceEligibility(activeId.getId());
+        VerificationResponse response = service.checkLicenceEligibility(activeId.getId());
         assertTrue(response.isValid());
     }
 
     @Test
     void checkLicenceEligibilityReturnsFalseForNonExistentId() {
-        LicenceVerificationResponse response = service.checkLicenceEligibility(UUID.randomUUID());
+        VerificationResponse response = service.checkLicenceEligibility(UUID.randomUUID());
         assertFalse(response.isValid());
     }
 
     @Test
     void checkLicenceEligibilityReturnsFalseIfStatusIsNotActive() {
         manager.suspend(activeId.getId(), "investigation");
-        LicenceVerificationResponse response = service.checkLicenceEligibility(activeId.getId());
+        VerificationResponse response = service.checkLicenceEligibility(activeId.getId());
         assertFalse(response.isValid());
     }
 
     @Test
     void checkLicenceEligibilityReturnsFalseIfTemporaryRestrictionIsTrue() {
         manager.updateTemporaryRestriction(activeId.getId(), true);
-        LicenceVerificationResponse response = service.checkLicenceEligibility(activeId.getId());
+        VerificationResponse response = service.checkLicenceEligibility(activeId.getId());
         assertFalse(response.isValid());
     }
 
@@ -129,7 +129,7 @@ class IdentityConsumptionServiceTest {
     void checkLicenceEligibilityReturnsTrueAfterTemporaryRestrictionIsLifted() {
         manager.updateTemporaryRestriction(activeId.getId(), true);
         manager.updateTemporaryRestriction(activeId.getId(), false);
-        LicenceVerificationResponse response = service.checkLicenceEligibility(activeId.getId());
+        VerificationResponse response = service.checkLicenceEligibility(activeId.getId());
         assertTrue(response.isValid());
     }
 }

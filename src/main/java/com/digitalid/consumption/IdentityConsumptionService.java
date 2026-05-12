@@ -5,9 +5,9 @@ import java.util.UUID;
 
 public interface IdentityConsumptionService {
 
-    ValidityResponse checkValidity(UUID id);
+    VerificationResponse checkValidity(UUID id);
 
-    TaxVerificationResponse checkTaxEligibility(UUID id, LocalDate periodStart, LocalDate periodEnd);
+    VerificationResponse checkTaxEligibility(UUID id, LocalDate periodStart, LocalDate periodEnd);
 
-    LicenceVerificationResponse checkLicenceEligibility(UUID id);
+    VerificationResponse checkLicenceEligibility(UUID id);
 }
