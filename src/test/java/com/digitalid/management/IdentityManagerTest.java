@@ -29,147 +29,191 @@ class IdentityManagerTest {
     }
 
     @Test
-    void createIdentityReturnsDigitalIdWithActiveStatus() {
+    void should_returnActiveStatus_when_identityCreated() {
         assertEquals(DigitalIdStatus.ACTIVE, activeId.getStatus());
     }
 
     @Test
-    void createIdentityThrowsIfNationalIdNumberIsNull() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_nationalIdNumberIsNull() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.createIdentity(null, LocalDate.of(1990, 1, 1), "John Smith", null, null));
+
+        assertTrue(ex.getMessage().contains("nationalIdNumber"));
     }
 
     @Test
-    void createIdentityThrowsIfNationalIdNumberIsBlank() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_nationalIdNumberIsBlank() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.createIdentity("   ", LocalDate.of(1990, 1, 1), "John Smith", null, null));
+
+        assertTrue(ex.getMessage().contains("nationalIdNumber"));
     }
 
     @Test
-    void createIdentityThrowsIfDateOfBirthIsNull() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_dateOfBirthIsNull() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.createIdentity("NID999", null, "John Smith", null, null));
+
+        assertTrue(ex.getMessage().contains("dateOfBirth"));
     }
 
     @Test
-    void createIdentityThrowsIfFullNameIsNull() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_fullNameIsNull() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.createIdentity("NID999", LocalDate.of(1990, 1, 1), null, null, null));
+
+        assertTrue(ex.getMessage().contains("fullName"));
     }
 
     @Test
-    void createIdentityThrowsIfFullNameIsBlank() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_fullNameIsBlank() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.createIdentity("NID999", LocalDate.of(1990, 1, 1), "   ", null, null));
+
+        assertTrue(ex.getMessage().contains("fullName"));
     }
 
     @Test
-    void updateAddressSucceedsOnActiveId() {
+    void should_updateAddress_when_idIsActive() {
         DigitalId result = manager.updateAddress(activeId.getId(), "123 Main St");
+
         assertEquals("123 Main St", result.getAddress());
     }
 
     @Test
-    void updateAddressThrowsIfRevoked() {
+    void should_throwWithDescriptiveMessage_when_updatingAddressOnRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.updateAddress(activeId.getId(), "123 Main St"));
+
+        assertTrue(ex.getMessage().contains("REVOKED"));
     }
 
     @Test
-    void updateAddressThrowsIfIdDoesNotExist() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_updatingAddressForUnknownId() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.updateAddress(UUID.randomUUID(), "123 Main St"));
+
+        assertTrue(ex.getMessage().contains("No Digital ID found"));
     }
 
     @Test
-    void updateEmailSucceedsOnActiveId() {
+    void should_updateEmail_when_idIsActive() {
         DigitalId result = manager.updateEmail(activeId.getId(), "jane@example.com");
+
         assertEquals("jane@example.com", result.getEmail());
     }
 
     @Test
-    void updateEmailThrowsIfRevoked() {
+    void should_throwWithDescriptiveMessage_when_updatingEmailOnRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.updateEmail(activeId.getId(), "jane@example.com"));
+
+        assertTrue(ex.getMessage().contains("REVOKED"));
     }
 
     @Test
-    void updateTemporaryRestrictionSucceedsOnActiveId() {
+    void should_updateTemporaryRestriction_when_idIsActive() {
         DigitalId result = manager.updateTemporaryRestriction(activeId.getId(), true);
+
         assertTrue(result.isTemporaryRestriction());
     }
 
     @Test
-    void updateTemporaryRestrictionThrowsIfRevoked() {
+    void should_throwWithDescriptiveMessage_when_updatingRestrictionOnRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.updateTemporaryRestriction(activeId.getId(), true));
+
+        assertTrue(ex.getMessage().contains("REVOKED"));
     }
 
     @Test
-    void suspendChangesStatusToSuspended() {
+    void should_changeStatusToSuspended_when_suspended() {
         manager.suspend(activeId.getId(), "Under investigation");
+
         assertEquals(DigitalIdStatus.SUSPENDED, manager.findById(activeId.getId()).getStatus());
     }
 
     @Test
-    void suspendThrowsIfAlreadySuspended() {
+    void should_throwWithDescriptiveMessage_when_suspendingAlreadySuspendedId() {
         manager.suspend(activeId.getId(), "first suspension");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.suspend(activeId.getId(), "second suspension"));
+
+        assertTrue(ex.getMessage().contains("SUSPENDED"));
     }
 
     @Test
-    void suspendThrowsIfRevoked() {
+    void should_throwWithDescriptiveMessage_when_suspendingRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.suspend(activeId.getId(), "attempt suspend"));
+
+        assertTrue(ex.getMessage().contains("REVOKED"));
     }
 
     @Test
-    void reactivateChangesStatusFromSuspendedToActive() {
+    void should_changeStatusToActive_when_reactivatedFromSuspended() {
         manager.suspend(activeId.getId(), "temp suspension");
         manager.reactivate(activeId.getId(), "cleared");
+
         assertEquals(DigitalIdStatus.ACTIVE, manager.findById(activeId.getId()).getStatus());
     }
 
     @Test
-    void reactivateThrowsIfAlreadyActive() {
-        assertThrows(IllegalStateException.class, () ->
+    void should_throwWithDescriptiveMessage_when_reactivatingActiveId() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.reactivate(activeId.getId(), "already active"));
+
+        assertTrue(ex.getMessage().contains("ACTIVE"));
     }
 
     @Test
-    void reactivateThrowsIfRevoked() {
+    void should_throwWithDescriptiveMessage_when_reactivatingRevokedId() {
         manager.revoke(activeId.getId(), "test revoke");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.reactivate(activeId.getId(), "attempt reactivate"));
+
+        assertTrue(ex.getMessage().contains("REVOKED"));
     }
 
     @Test
-    void revokeChangesStatusToRevoked() {
+    void should_changeStatusToRevoked_when_revoked() {
         manager.revoke(activeId.getId(), "fraud");
+
         assertEquals(DigitalIdStatus.REVOKED, manager.findById(activeId.getId()).getStatus());
     }
 
     @Test
-    void revokeThrowsIfAlreadyRevoked() {
+    void should_throwWithDescriptiveMessage_when_revokingAlreadyRevokedId() {
         manager.revoke(activeId.getId(), "first revoke");
-        assertThrows(IllegalStateException.class, () ->
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 manager.revoke(activeId.getId(), "second revoke"));
+
+        assertTrue(ex.getMessage().contains("REVOKED"));
     }
 
     @Test
-    void findByIdReturnsCorrectDigitalId() {
+    void should_returnCorrectDigitalId_when_findById() {
         DigitalId found = manager.findById(activeId.getId());
+
         assertEquals(activeId.getId(), found.getId());
     }
 
     @Test
-    void findByIdThrowsIfIdDoesNotExist() {
-        assertThrows(IllegalArgumentException.class, () ->
+    void should_throwWithDescriptiveMessage_when_findByIdForUnknownId() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 manager.findById(UUID.randomUUID()));
+
+        assertTrue(ex.getMessage().contains("No Digital ID found"));
     }
 }

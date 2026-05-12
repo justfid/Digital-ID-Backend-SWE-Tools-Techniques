@@ -20,63 +20,72 @@ class DigitalIdTest {
     }
 
     @Test
-    void newDigitalIdHasActiveStatus() {
+    void should_haveActiveStatus_when_newDigitalIdCreated() {
         assertEquals(DigitalIdStatus.ACTIVE, digitalId.getStatus());
     }
 
     @Test
-    void newDigitalIdHasNonNullUuidId() {
+    void should_haveNonNullUuidId_when_newDigitalIdCreated() {
         assertNotNull(digitalId.getId());
         assertInstanceOf(UUID.class, digitalId.getId());
     }
 
     @Test
-    void twoDigitalIdsHaveDifferentIds() {
+    void should_generateDifferentIds_when_twoDigitalIdsCreated() {
         DigitalId second = new DigitalId.Builder("NID999999", LocalDate.of(1985, 3, 22), "John Smith").build();
+
         assertNotEquals(digitalId.getId(), second.getId());
     }
 
     @Test
-    void statusHistoryIsNotEmptyOnCreation() {
+    void should_haveNonEmptyStatusHistory_when_newDigitalIdCreated() {
         assertFalse(digitalId.getStatusHistory().isEmpty());
     }
 
     @Test
-    void firstStatusHistoryEntryIsActiveWithInitialCreationReason() {
+    void should_recordActiveStatusWithInitialCreationReason_when_checkingFirstStatusEntry() {
         StatusEntry first = digitalId.getStatusHistory().get(0);
+
         assertEquals(DigitalIdStatus.ACTIVE, first.getStatus());
         assertEquals("Initial creation", first.getReason());
     }
 
     @Test
-    void statusHistoryIsUnmodifiable() {
+    void should_throwUnsupportedOperationException_when_attemptingToModifyStatusHistory() {
         List<StatusEntry> history = digitalId.getStatusHistory();
         StatusEntry dummy = new StatusEntry(DigitalIdStatus.SUSPENDED, LocalDateTime.now(), "test");
-        assertThrows(UnsupportedOperationException.class, () -> history.add(dummy));
+
+        // UnsupportedOperationException from Collections.unmodifiableList carries no message
+        UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class,
+                () -> history.add(dummy));
+
+        assertNull(ex.getMessage());
     }
 
     @Test
-    void immutableFieldsMatchBuilderInput() {
+    void should_storeImmutableFieldsFromBuilder_when_digitalIdCreated() {
         assertEquals("Jane Doe", digitalId.getFullName());
         assertEquals("NID123456", digitalId.getNationalIdNumber());
         assertEquals(LocalDate.of(1990, 6, 15), digitalId.getDateOfBirth());
     }
 
     @Test
-    void optionalFieldsAreNullWhenNotSet() {
+    void should_haveNullAddressAndEmail_when_optionalFieldsNotProvided() {
         assertNull(digitalId.getAddress());
         assertNull(digitalId.getEmail());
     }
 
     @Test
-    void temporaryRestrictionDefaultsToFalse() {
+    void should_defaultTemporaryRestrictionToFalse_when_newDigitalIdCreated() {
         assertFalse(digitalId.isTemporaryRestriction());
     }
 
     @Test
-    void statusEntryStoresAndReturnsFieldsCorrectly() {
+    void should_storeAndReturnAllFields_when_statusEntryCreated() {
         LocalDateTime timestamp = LocalDateTime.of(2026, 5, 8, 12, 0, 0);
+
         StatusEntry entry = new StatusEntry(DigitalIdStatus.SUSPENDED, timestamp, "Fraud investigation");
+
         assertEquals(DigitalIdStatus.SUSPENDED, entry.getStatus());
         assertEquals(timestamp, entry.getTimestamp());
         assertEquals("Fraud investigation", entry.getReason());

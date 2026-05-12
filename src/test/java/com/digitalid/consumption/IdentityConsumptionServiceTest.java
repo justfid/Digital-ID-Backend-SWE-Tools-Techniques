@@ -38,108 +38,124 @@ class IdentityConsumptionServiceTest {
     }
 
     @Test
-    void checkValidityReturnsTrueForActiveId() {
+    void should_returnValidResponse_when_idIsActive() {
         VerificationResponse response = validityService.checkValidity(activeId.getId());
+
         assertTrue(response.isValid());
     }
 
     @Test
-    void checkValidityReturnsFalseForSuspendedId() {
+    void should_returnInvalidResponse_when_idIsSuspended() {
         manager.suspend(activeId.getId(), "investigation");
+
         VerificationResponse response = validityService.checkValidity(activeId.getId());
+
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkValidityReturnsFalseForRevokedId() {
+    void should_returnInvalidResponse_when_idIsRevoked() {
         manager.revoke(activeId.getId(), "fraud");
+
         VerificationResponse response = validityService.checkValidity(activeId.getId());
+
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkValidityReturnsFalseForNonExistentId() {
+    void should_returnInvalidResponse_when_checkValidityCalledForNonExistentId() {
         VerificationResponse response = validityService.checkValidity(UUID.randomUUID());
+
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkTaxEligibilityReturnsTrueForActiveIdWithNoSuspensionsInPeriod() {
+    void should_returnValidResponse_when_taxEligibilityCheckedForActiveIdWithNoSuspensionsInPeriod() {
         LocalDate periodStart = LocalDate.now().minusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
+
         VerificationResponse response = taxService.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+
         assertTrue(response.isValid());
     }
 
     @Test
-    void checkTaxEligibilityReturnsFalseForNonExistentId() {
+    void should_returnInvalidResponse_when_taxEligibilityCheckedForNonExistentId() {
         LocalDate periodStart = LocalDate.now().minusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
+
         VerificationResponse response = taxService.checkTaxEligibility(UUID.randomUUID(), periodStart, periodEnd);
+
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkTaxEligibilityReturnsFalseIfStatusIsNotActive() {
+    void should_returnInvalidResponse_when_taxEligibilityCheckedForCurrentlySuspendedId() {
         manager.suspend(activeId.getId(), "investigation");
         LocalDate periodStart = LocalDate.now().minusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
+
         VerificationResponse response = taxService.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkTaxEligibilityReturnsFalseIfSuspendedDuringPeriod() {
+    void should_returnInvalidResponse_when_suspensionOccurredWithinTaxPeriod() {
         // Suspend then reactivate so current status is ACTIVE, but the suspension entry timestamp is today
         manager.suspend(activeId.getId(), "temp suspension");
         manager.reactivate(activeId.getId(), "cleared");
         // Period straddles today so the suspension timestamp falls within it
         LocalDate periodStart = LocalDate.now().minusDays(1);
         LocalDate periodEnd = LocalDate.now().plusDays(1);
+
         VerificationResponse response = taxService.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkTaxEligibilityReturnsTrueIfSuspendedOutsidePeriod() {
+    void should_returnValidResponse_when_suspensionOccurredOutsideTaxPeriod() {
         // Suspend then reactivate so current status is ACTIVE, but the suspension entry timestamp is today
         manager.suspend(activeId.getId(), "temp suspension");
         manager.reactivate(activeId.getId(), "cleared");
         // Period is entirely in the future so the suspension (which happened now) falls outside it
         LocalDate periodStart = LocalDate.now().plusDays(30);
         LocalDate periodEnd = LocalDate.now().plusDays(60);
+
         VerificationResponse response = taxService.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+
         assertTrue(response.isValid());
     }
 
     @Test
-    void checkLicenceEligibilityReturnsTrueForActiveIdWithNoRestriction() {
+    void should_returnValidResponse_when_idIsActiveWithNoTemporaryRestriction() {
         VerificationResponse response = licenceService.checkLicenceEligibility(activeId.getId());
         assertTrue(response.isValid());
     }
 
     @Test
-    void checkLicenceEligibilityReturnsFalseForNonExistentId() {
+    void should_returnInvalidResponse_when_licenceEligibilityCheckedForNonExistentId() {
         VerificationResponse response = licenceService.checkLicenceEligibility(UUID.randomUUID());
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkLicenceEligibilityReturnsFalseIfStatusIsNotActive() {
+    void should_returnInvalidResponse_when_licenceEligibilityCheckedForSuspendedId() {
         manager.suspend(activeId.getId(), "investigation");
         VerificationResponse response = licenceService.checkLicenceEligibility(activeId.getId());
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkLicenceEligibilityReturnsFalseIfTemporaryRestrictionIsTrue() {
+    void should_returnInvalidResponse_when_temporaryRestrictionIsSet() {
         manager.updateTemporaryRestriction(activeId.getId(), true);
         VerificationResponse response = licenceService.checkLicenceEligibility(activeId.getId());
         assertFalse(response.isValid());
     }
 
     @Test
-    void checkLicenceEligibilityReturnsTrueAfterTemporaryRestrictionIsLifted() {
+    void should_returnValidResponse_when_temporaryRestrictionIsLifted() {
         manager.updateTemporaryRestriction(activeId.getId(), true);
         manager.updateTemporaryRestriction(activeId.getId(), false);
         VerificationResponse response = licenceService.checkLicenceEligibility(activeId.getId());
