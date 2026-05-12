@@ -8,6 +8,7 @@ import com.digitalid.auth.AuthorisationManagerImpl;
 import com.digitalid.consumption.IdentityConsumptionService;
 import com.digitalid.consumption.IdentityConsumptionServiceImpl;
 import com.digitalid.consumption.VerificationResponse;
+import com.digitalid.management.DigitalIdRepository;
 import com.digitalid.management.IdentityManager;
 import com.digitalid.management.IdentityManagerImpl;
 import com.digitalid.management.InMemoryDigitalIdRepository;
@@ -17,7 +18,6 @@ import com.digitalid.model.OrganisationType;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
@@ -31,19 +31,18 @@ public class Cli {
 
     private final Scanner scanner = new Scanner(System.in);
     private final AuditLogger auditLogger = new InMemoryAuditLogger();
-    private final AuthorisationManager authManager = new AuthorisationManagerImpl();
 
+    private final DigitalIdRepository repository;
     private final IdentityManager identityManager;
     private final IdentityConsumptionService taxService;
     private final IdentityConsumptionService licenceService;
     private final IdentityConsumptionService employerService;
     private final IdentityConsumptionService bankService;
 
-    // Tracks identities created in this session for the ID-selection menu
-    private final List<DigitalId> knownIdentities = new ArrayList<>();
-
     public Cli() {
-        identityManager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, new InMemoryDigitalIdRepository(), authManager, auditLogger);
+        AuthorisationManager authManager = new AuthorisationManagerImpl();
+        repository = new InMemoryDigitalIdRepository();
+        identityManager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, repository, authManager, auditLogger);
         taxService     = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.TAX_AUTHORITY,              authManager, auditLogger);
         licenceService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.DRIVING_LICENCE_AUTHORITY,  authManager, auditLogger);
         employerService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.EMPLOYER,                  authManager, auditLogger);
@@ -52,14 +51,13 @@ public class Cli {
 
     public void start() {
         System.out.println("Digital ID Management System:");
-        outer:
         while (true) {
             OrganisationType org = selectOrganisation();
             MenuResult result = MenuResult.CONTINUE;
             while (result == MenuResult.CONTINUE) {
                 result = runMenuStep(org);
             }
-            if (result == MenuResult.EXIT) break outer;
+            if (result == MenuResult.EXIT) break;
         }
         System.out.println("Goodbye.");
         scanner.close();
@@ -183,7 +181,6 @@ public class Cli {
                     nationalIdNumber, dateOfBirth, fullName,
                     address.isEmpty() ? null : address,
                     email.isEmpty()   ? null : email);
-            knownIdentities.add(id);
             System.out.println("Created: " + id.getId() + "  " + id.getFullName());
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
@@ -332,13 +329,14 @@ public class Cli {
 
     // ID selection helper
     private UUID selectId() {
-        if (knownIdentities.isEmpty()) {
+        List<DigitalId> identities = repository.findAll();
+        if (identities.isEmpty()) {
             System.out.println("No identities exist yet. Create one as CENTRAL_AUTHORITY first.");
             return null;
         }
         System.out.println("Select a Digital ID:");
-        for (int i = 0; i < knownIdentities.size(); i++) {
-            DigitalId d = knownIdentities.get(i);
+        for (int i = 0; i < identities.size(); i++) {
+            DigitalId d = identities.get(i);
             System.out.printf("  %d. [%s] %s (%s)%n", i + 1,
                     d.getNationalIdNumber(), d.getFullName(), d.getStatus());
         }
@@ -354,8 +352,8 @@ public class Cli {
                 return null;
             }
         }
-        if (choice >= 1 && choice <= knownIdentities.size()) {
-            return knownIdentities.get(choice - 1).getId();
+        if (choice >= 1 && choice <= identities.size()) {
+            return identities.get(choice - 1).getId();
         }
         System.out.println("Invalid choice.");
         return null;
