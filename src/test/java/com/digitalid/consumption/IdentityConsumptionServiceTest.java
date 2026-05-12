@@ -4,6 +4,7 @@ import com.digitalid.audit.InMemoryAuditLogger;
 import com.digitalid.auth.AuthorisationManagerImpl;
 import com.digitalid.management.IdentityManager;
 import com.digitalid.management.IdentityManagerImpl;
+import com.digitalid.management.InMemoryDigitalIdRepository;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.OrganisationType;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,7 @@ class IdentityConsumptionServiceTest {
     @BeforeEach
     void setUp() {
         AuthorisationManagerImpl authManager = new AuthorisationManagerImpl();
-        manager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, authManager, new InMemoryAuditLogger());
+        manager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, new InMemoryDigitalIdRepository(), authManager, new InMemoryAuditLogger());
 
         validityService = new IdentityConsumptionServiceImpl(manager, OrganisationType.EMPLOYER, authManager, new InMemoryAuditLogger());
         taxService = new IdentityConsumptionServiceImpl(manager, OrganisationType.TAX_AUTHORITY, authManager, new InMemoryAuditLogger());

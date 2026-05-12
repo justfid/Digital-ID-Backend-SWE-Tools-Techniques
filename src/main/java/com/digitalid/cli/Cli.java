@@ -10,6 +10,7 @@ import com.digitalid.consumption.IdentityConsumptionServiceImpl;
 import com.digitalid.consumption.VerificationResponse;
 import com.digitalid.management.IdentityManager;
 import com.digitalid.management.IdentityManagerImpl;
+import com.digitalid.management.InMemoryDigitalIdRepository;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.OrganisationType;
 
@@ -42,7 +43,7 @@ public class Cli {
     private final List<DigitalId> knownIdentities = new ArrayList<>();
 
     public Cli() {
-        identityManager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, authManager, auditLogger);
+        identityManager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, new InMemoryDigitalIdRepository(), authManager, auditLogger);
         taxService     = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.TAX_AUTHORITY,              authManager, auditLogger);
         licenceService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.DRIVING_LICENCE_AUTHORITY,  authManager, auditLogger);
         employerService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.EMPLOYER,                  authManager, auditLogger);

@@ -24,7 +24,7 @@ class IdentityManagerTest {
     void setUp() {
         AuthorisationManager authManager = new AuthorisationManagerImpl();
         AuditLogger auditLogger = new InMemoryAuditLogger();
-        manager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, authManager, auditLogger);
+        manager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, new InMemoryDigitalIdRepository(), authManager, auditLogger);
         activeId = manager.createIdentity("NID123456", LocalDate.of(1990, 6, 15), "Jane Doe", null, null);
     }
 

@@ -12,6 +12,7 @@ import com.digitalid.consumption.IdentityConsumptionServiceImpl;
 import com.digitalid.consumption.VerificationResponse;
 import com.digitalid.management.IdentityManager;
 import com.digitalid.management.IdentityManagerImpl;
+import com.digitalid.management.InMemoryDigitalIdRepository;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.DigitalIdStatus;
 import com.digitalid.model.OrganisationType;
@@ -37,7 +38,7 @@ class DigitalIdSystemIntegrationTest {
     void setUp() {
         auditLogger = new InMemoryAuditLogger();
         authManager = new AuthorisationManagerImpl();
-        identityManager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, authManager, auditLogger);
+        identityManager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, new InMemoryDigitalIdRepository(), authManager, auditLogger);
         employerService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.EMPLOYER, authManager, auditLogger);
         bankService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.BANK, authManager, auditLogger);
         taxService = new IdentityConsumptionServiceImpl(identityManager, OrganisationType.TAX_AUTHORITY, authManager, auditLogger);
@@ -120,7 +121,7 @@ class DigitalIdSystemIntegrationTest {
     @Test
     void should_throwUnauthorisedAndLogFailure_when_bankTriesToCreateIdentity() {
         // Construct a manager acting as BANK to simulate an unauthorised management attempt
-        IdentityManager bankManager = new IdentityManagerImpl(OrganisationType.BANK, authManager, auditLogger);
+        IdentityManager bankManager = new IdentityManagerImpl(OrganisationType.BANK, new InMemoryDigitalIdRepository(), authManager, auditLogger);
 
         assertThrows(UnauthorisedOperationException.class, () ->
                 bankManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null));
@@ -135,7 +136,7 @@ class DigitalIdSystemIntegrationTest {
     @Test
     void should_throwUnauthorisedAndLogFailure_when_taxAuthorityTriesToRevokeIdentity() {
         DigitalId id = identityManager.createIdentity("NID001", LocalDate.of(1990, 1, 1), "Alice", null, null);
-        IdentityManager taxManager = new IdentityManagerImpl(OrganisationType.TAX_AUTHORITY, authManager, auditLogger);
+        IdentityManager taxManager = new IdentityManagerImpl(OrganisationType.TAX_AUTHORITY, new InMemoryDigitalIdRepository(), authManager, auditLogger);
 
         assertThrows(UnauthorisedOperationException.class, () ->
                 taxManager.revoke(id.getId(), "attempted revoke"));

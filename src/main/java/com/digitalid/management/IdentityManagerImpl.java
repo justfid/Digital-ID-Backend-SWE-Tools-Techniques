@@ -10,21 +10,21 @@ import com.digitalid.model.DigitalIdStatus;
 import com.digitalid.model.OrganisationType;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class IdentityManagerImpl implements IdentityManager {
 
     private final OrganisationType organisationType;
+    private final DigitalIdRepository repository;
     private final AuthorisationManager authorisationManager;
     private final AuditLogger auditLogger;
-    private final Map<UUID, DigitalIdMutator> store = new HashMap<>();
 
     public IdentityManagerImpl(OrganisationType organisationType,
+                                DigitalIdRepository repository,
                                 AuthorisationManager authorisationManager,
                                 AuditLogger auditLogger) {
         this.organisationType = organisationType;
+        this.repository = repository;
         this.authorisationManager = authorisationManager;
         this.auditLogger = auditLogger;
     }
@@ -47,7 +47,7 @@ public class IdentityManagerImpl implements IdentityManager {
                     .address(address)
                     .email(email)
                     .build();
-            store.put(digitalId.getId(), digitalId.getMutator());
+            repository.save(digitalId);
             auditLogger.log(organisationType, Operations.CREATE_IDENTITY, digitalId.getId(), true, "Identity created");
             return digitalId;
         } catch (RuntimeException e) {
@@ -165,15 +165,14 @@ public class IdentityManagerImpl implements IdentityManager {
     // findById is an internal lookup used by the consumption layer
     @Override
     public DigitalId findById(UUID id) {
-        return requireExisting(id).getDigitalId();
+        return repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No Digital ID found for id: " + id));
     }
 
     private DigitalIdMutator requireExisting(UUID id) {
-        DigitalIdMutator mutator = store.get(id);
-        if (mutator == null) {
-            throw new IllegalArgumentException("No Digital ID found for id: " + id);
-        }
-        return mutator;
+        return repository.findById(id)
+                .map(DigitalId::getMutator)
+                .orElseThrow(() -> new IllegalArgumentException("No Digital ID found for id: " + id));
     }
 
     private void requireNotRevoked(DigitalId digitalId) {
