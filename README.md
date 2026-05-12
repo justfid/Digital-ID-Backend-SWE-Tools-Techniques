@@ -50,8 +50,8 @@ mvn compile exec:java
 
 ## Running the Tests
 
-The test suite covers all five layers of the platform: model, management, consumption, authorisation, and audit.
-80 JUnit 5 tests verify both the happy path and error conditions for each operation.
+The test suite includes 97 JUnit 5 tests: 80 unit tests covering each layer in isolation: model, management, consumption, authorisation, and audit. 
+The other 17 tests are integration tests that exercise the full request lifecycle across all layers working together.
 
 ```bash
 mvn test
