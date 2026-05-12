@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class InMemoryAuditLogger implements AuditLogger {
 
@@ -25,10 +24,8 @@ public class InMemoryAuditLogger implements AuditLogger {
 
     @Override
     public List<AuditEvent> getLogForId(UUID digitalIdId) {
-        return Collections.unmodifiableList(
-                events.stream()
-                        .filter(e -> digitalIdId.equals(e.getDigitalIdId()))
-                        .collect(Collectors.toList())
-        );
+        return events.stream()
+                .filter(e -> digitalIdId.equals(e.getDigitalIdId()))
+                .toList();
     }
 }
