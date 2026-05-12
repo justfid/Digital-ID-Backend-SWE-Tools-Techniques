@@ -1,7 +1,12 @@
 package com.digitalid.management;
 
+import com.digitalid.audit.AuditLogger;
+import com.digitalid.audit.InMemoryAuditLogger;
+import com.digitalid.auth.AuthorisationManager;
+import com.digitalid.auth.AuthorisationManagerImpl;
 import com.digitalid.model.DigitalId;
 import com.digitalid.model.DigitalIdStatus;
+import com.digitalid.model.OrganisationType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +22,9 @@ class IdentityManagerTest {
 
     @BeforeEach
     void setUp() {
-        manager = new IdentityManagerImpl();
+        AuthorisationManager authManager = new AuthorisationManagerImpl();
+        AuditLogger auditLogger = new InMemoryAuditLogger();
+        manager = new IdentityManagerImpl(OrganisationType.CENTRAL_AUTHORITY, authManager, auditLogger);
         activeId = manager.createIdentity("NID123456", LocalDate.of(1990, 6, 15), "Jane Doe", null, null);
     }
 
