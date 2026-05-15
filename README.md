@@ -50,7 +50,7 @@ mvn compile exec:java
 
 ## Running the Tests
 
-The test suite includes 97 JUnit 5 tests: 80 unit tests covering each layer in isolation: model, management, consumption, authorisation, and audit. 
+The test suite includes 98 JUnit 5 tests: 81 unit tests covering each layer in isolation: model, management, consumption, authorisation, and audit. 
 The other 17 tests are integration tests that exercise the full request lifecycle across all layers working together.
 
 ```bash
