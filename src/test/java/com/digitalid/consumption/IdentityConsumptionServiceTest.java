@@ -169,7 +169,6 @@ class IdentityConsumptionServiceTest {
         manager.suspend(activeId.getId(), "suspended before period");
         manager.reactivate(activeId.getId(), "reactivated during period");
 
-        // periodStart is tomorrow so both events above (timestamped today) predate the period
         LocalDate periodStart = LocalDate.now().plusDays(1);
         LocalDate periodEnd = LocalDate.now().plusDays(30);
 

@@ -82,6 +82,15 @@ public class IdentityConsumptionServiceImpl implements IdentityConsumptionServic
             return VerificationResponse.invalid("Identity is not active");
         }
 
+        boolean suspendedAtPeriodStart = digitalId.getStatusHistory().stream()
+                .anyMatch(entry -> entry.getStatus() == DigitalIdStatus.SUSPENDED
+                        && !entry.getTimestamp().toLocalDate().isBefore(periodStart.minusDays(1))
+                        && !entry.getTimestamp().toLocalDate().isAfter(periodStart));
+
+        if (suspendedAtPeriodStart) {
+            return VerificationResponse.invalid("Identity was suspended at the start of the reporting period");
+        }
+
         boolean wasSuspendedDuringPeriod = digitalId.getStatusHistory().stream()
                 .anyMatch(entry -> entry.getStatus() == DigitalIdStatus.SUSPENDED
                         && !entry.getTimestamp().toLocalDate().isBefore(periodStart)
