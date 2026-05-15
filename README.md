@@ -4,6 +4,8 @@ A console-based backend platform for issuing, managing, and verifying digital id
 
 ![CI](https://github.com/justfid/Digital-ID-Backend-SWE-Tools-Techniques/actions/workflows/ci.yml/badge.svg)
 
+[GitHub Repository](https://github.com/justfid/Digital-ID-Backend-SWE-Tools-Techniques)
+
 ## Overview
 
 The platform models a centralised digital identity system where a single authority controls the full lifecycle of citizen identity records — creating them, updating their details, and changing their status. 
