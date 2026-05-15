@@ -162,4 +162,19 @@ class IdentityConsumptionServiceTest {
         VerificationResponse response = licenceService.checkLicenceEligibility(activeId.getId());
         assertTrue(response.isValid());
     }
+
+    @Test
+    void should_returnInvalidResponse_when_identityWasSuspendedBeforePeriodAndReactivatedDuringIt() {
+        // Edge case: suspension predates the period start, reactivation occurs during the period.
+        manager.suspend(activeId.getId(), "suspended before period");
+        manager.reactivate(activeId.getId(), "reactivated during period");
+
+        // periodStart is tomorrow so both events above (timestamped today) predate the period
+        LocalDate periodStart = LocalDate.now().plusDays(1);
+        LocalDate periodEnd = LocalDate.now().plusDays(30);
+
+        VerificationResponse response = taxService.checkTaxEligibility(activeId.getId(), periodStart, periodEnd);
+
+        assertFalse(response.isValid());
+    }
 }
